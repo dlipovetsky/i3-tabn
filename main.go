@@ -9,23 +9,22 @@ import (
 	"go.i3wm.org/i3/v4"
 )
 
-func GetTab(i int) (*i3.Node, error) {
+func ContainerByTabIndex(tc *i3.Node, i uint64) (*i3.Node, error) {
+	if i > uint64(len(tc.Nodes)) {
+		return nil, fmt.Errorf("no tab at index %d", i)
+	}
+	return tc.Nodes[i], nil
+}
+
+func FindFocusedTabbedContainer() (*i3.Node, error) {
 	tree, err := i3.GetTree()
 	if err != nil {
 		return nil, err
 	}
 
-	tc := tree.Root.FindFocused(func(n *i3.Node) bool {
+	return tree.Root.FindFocused(func(n *i3.Node) bool {
 		return n.Layout == i3.Tabbed
-	})
-	if tc == nil {
-		return nil, fmt.Errorf("could not find tabbed container with focus")
-	}
-
-	if i < 0 || i > len(tc.Nodes) {
-		return nil, fmt.Errorf("no tab at index %d", i)
-	}
-	return tc.Nodes[i], nil
+	}), nil
 }
 
 func Focus(n *i3.Node) error {
@@ -36,18 +35,26 @@ func Focus(n *i3.Node) error {
 }
 
 func main() {
-	if len(os.Args) == 2 {
-		tab := os.Args[1]
-		i, err := strconv.Atoi(os.Args[1])
-		if err != nil {
-			log.Fatalf("invalid tab %s", tab)
-		}
-		n, err := GetTab(i)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err := Focus(n); err != nil {
-			log.Fatalf("could not focus on tab %d", i)
-		}
+	if len(os.Args) != 2 {
+		log.Fatalf("usage: %s TABINDEX", os.Args[0])
+	}
+
+	index, err := strconv.ParseUint(os.Args[1], 10, 8)
+	if err != nil {
+		log.Fatalf("tab index must be a non-negative integer: %q: %s", os.Args[1], err)
+	}
+
+	tc, err := FindFocusedTabbedContainer()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	c, err := ContainerByTabIndex(tc, index)
+	if err != nil {
+		log.Fatalf("could not find container at tab index %d", index)
+	}
+
+	if err := Focus(c); err != nil {
+		log.Fatalf("could not focus container at tab index %d", index)
 	}
 }
