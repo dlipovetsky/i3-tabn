@@ -17,7 +17,7 @@ Useful for a workspace with a single tabbed container, e.g.
 
 ## Install
 
-`go install github.com/dlipovetsky/i3-tabn`
+`go get -u daniel.lipovetsky.me/i3-tabn`
 
 Make sure that `$GOBIN` is in your path, or put `i3-tabn` somewhere in your path.
 

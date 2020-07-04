@@ -1,4 +1,4 @@
-module i3-tabn
+module daniel.lipovetsky.me/i3-tabn
 
 go 1.13
 
