@@ -9,11 +9,17 @@ import (
 	"go.i3wm.org/i3/v4"
 )
 
-func ContainerByTabIndex(tc *i3.Node, i uint64) (*i3.Node, error) {
-	if i > uint64(len(tc.Nodes)) {
-		return nil, fmt.Errorf("no tab at index %d", i)
+func ContainerByTabIndex(tc *i3.Node, index uint64) (*i3.Node, error) {
+	if index < 1 {
+		return nil, fmt.Errorf("tab index is %d, but must be 1 or greater", index)
 	}
-	return tc.Nodes[i], nil
+
+	highestTabIndex := uint64(len(tc.Nodes))
+	if index > highestTabIndex {
+		return nil, fmt.Errorf("tab index is %d, but highest index is %d", index, highestTabIndex)
+	}
+
+	return tc.Nodes[index-1], nil
 }
 
 func FindFocusedTabbedContainer() (*i3.Node, error) {
@@ -41,17 +47,20 @@ func main() {
 
 	index, err := strconv.ParseUint(os.Args[1], 10, 8)
 	if err != nil {
-		log.Fatalf("tab index must be a non-negative integer: %q: %s", os.Args[1], err)
+		log.Fatalf("tab index must be a number: %q: %s", os.Args[1], err)
 	}
 
 	tc, err := FindFocusedTabbedContainer()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to find focused tabbed container: %s", err)
+	}
+	if tc == nil {
+		log.Fatalf("focused container is not tabbed")
 	}
 
 	c, err := ContainerByTabIndex(tc, index)
 	if err != nil {
-		log.Fatalf("could not find container at tab index %d", index)
+		log.Fatalf("failed to find container by index: %s", err)
 	}
 
 	if err := Focus(c); err != nil {
